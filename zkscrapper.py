@@ -1,70 +1,103 @@
-from urllib import request
-import random
-import _thread
-import threading
-import urllib.request
 import os
+import requests
 from bs4 import BeautifulSoup
 
+# offset start at 40 end at 200
+class ZeroKScrapper:
 
+	def __init__(self, defaultDetailFilePath=None):
+		self.targetUrl = "http://zero-k.info/Maps"
+		self.base = "http://zero-k.info"
+		self.defaultInfoPath = 'mapInfo.csv'
+		self.session = requests.session()
+		self.formData = {
+            "mapSupportLevel": 2,
+            "size": "any",
+            "sea": "any",
+            "hills": "any",
+            "elongated": "any",
+            "assymetrical": "any",
+            "special": 0,
+            "isTeams": "Any",
+            "is1v1": "any",
+            "ffa": "any",
+            "chicken": "any",
+            "isDownloadable": 1,
+            "needsTagging": "false",
+            "search": "",
+            "offset": 40
+        }
+		if defaultDetailFilePath:
+			self.mode = "UPDATE"
+		else:
+			self.mode = "INIT"
+			if not os.path.exists(self.defaultInfoPath):
+				os.mkdir(self.defaultInfoPath)
 
+		self.detailFilePath = defaultDetailFilePath
+		# with map name and map download url
+		self.mapInfo = []
 
-class zkScrap(threading.Thread):
+	def _extractMapInfoFromDetailUrl(self, detailLink):
+		resp = self.session.get(self.base + detailLink)
+		soup = BeautifulSoup(resp.text, "html.parser")
+		tags = soup.select('a')
+		for tag in tags:
+			if tag.get('href') and tag['href'].endswith('sd7'):
+				found = {
+					"mapName": os.path.basename(tag['href']),
+					"url": tag['href']
+				}
+				return found
 
-	def __init__(self):
-		threading.Thread.__init__(self)
-		self.urls=[]
-		i=0
-		while i<10000:
-			self.urls.append(i)   #download list generation
-			i+=1
-	
-	def run(self):
-		while True:
-			urlNum=random.choice(self.urls)   #randomly downloads from the list
-			
-			response = request.urlopen("http://zero-k.info/Maps/Detail/"+str(urlNum))
-			# set the correct charset below
-			page_source = response.read().decode('utf-8')
-			if not 'WARNING, THIS MAP IS NOT AND WILL NOT BE DOWNLOADABLE.' in page_source:
-				soup = BeautifulSoup(page_source)
-				x=soup.findAll('a')
-				for i in x:
-					try:
-						if '.sd7' in i['href']:
-							print(i['href'])
-							url = i['href']
-							try:
-								urllib.request.urlretrieve(url, 'maps/'+os.path.basename(url))  #go to the next list downloads
-								self.urls.remove(urlNum)#put back if all downloads fail
-								break
-							except:
-								continue   #go to the second mirror if the first one fails
-					except:
-						print("page does not contain a href:"+str(i))
-					
-					
-					
+		return None
+
+	def _getAllMapInfo(self):
+		if self.mode == "INIT":
+			# first operation is get,
+			# then all the operation is post 
+			resp = self.session.get(self.targetUrl)
+			soup = BeautifulSoup(resp.text, "html.parser")
+			detailLinks = []
+			tags = soup.select('a')
+			for tag in tags:
+				if tag.get('href') and tag['href'].startswith("/Map"):
+					detailLinks.append(tag['href'])
+
+			for offset in range(40, 201, 40):
+				self.formData['offset'] = offset
+				resp = self.session.post(
+					self.targetUrl, 
+					json=self.formData
+				)
+				soup = BeautifulSoup(resp.text, "html.parser")
+				links = [tag['href'] for tag in soup.select('a')]
+				detailLinks.extend(links)
+
+			for detailLink in detailLinks:
+				info = self._extractMapInfoFromDetailUrl(detailLink)
+				if info:
+					self.mapInfo.append(info)
+	#				with open(self.defaultInfoPath, 'a') as f:
+	#					f.write("{0},{1}".format(info['mapName'], info['url']))
+	#					print("Wrote map -> {0}, url -> {1}".format(info['mapName'], info['url']))
+		else:
+			with open(self.detailFilePath, "r") as f:
+				mapInfoLines = f.readlines()
+				for line in mapInfoLines:
+					mapName, url = line.split(',')
+					self.mapInfo.append({
+						"mapName": mapName,
+						"url": url
+					})
 				
-				#x=soup.findAll('img')
-				#for i in x:
-					#if 'minimap.jpg' in i['src']:
-						#print(i['src'])
-						#url = i['src']
-						#try:
-							#urllib.request.urlretrieve(url, '/maps/'+os.path.basename(url))
-						#except:
-							#print('unable to get minimap for '+url)
-							
-								#x=soup.findAll('a')
-				#x=soup.findAll('img')
-				#for i in x:
-					#if 'heightmap.jpg' in i['src']:
-						#print(i['src'])
-						#url = i['src']
-						#try:
-							#urllib.request.urlretrieve(url, '/maps/'+os.path.basename(url))
-						#except:
-							#print('unable to get minimap for '+url)
-							
-								#x=soup.findAll('a')
+				
+
+
+
+				
+
+if __name__ == '__main__':
+	zk = ZeroKScrapper()
+	zk._getAllMapInfo()
+	print(zk.mapInfo)
