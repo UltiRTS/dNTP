@@ -50,14 +50,26 @@ class Downloader(threading.Thread):
     
     def run(self):
         self.vagueFilter()
-        for mapInfo in self.mapInfo:
-            resp = requests.get(mapInfo['url'])
-            if resp.status_code != 200:
-                continue
+        index = 0
+        retry = 3
+        while index < len(self.mapInfo):
+            mapInfo = self.mapInfo[index]
+            try:
+                resp = requests.get(mapInfo['url'])
+                if resp.status_code != 200:
+                    continue
 
-            with open(os.path.join('maps', mapInfo['mapName']), 'wb') as f:
-                f.write(resp.content)
-                print("Downloaded {0}".format(mapInfo['mapName']))
+                with open(os.path.join('maps', mapInfo['mapName']), 'wb') as f:
+                    f.write(resp.content)
+                    print("Downloaded {0}".format(mapInfo['mapName']))
+                index += 1
+            except Exception as e:
+                if retry < 0:
+                    retry = 3
+                    index += 1
+                print("error -> {0}, retrying {1} times.".format(e, retry))
+                retry -= 1
+
     
 
 if __name__ == '__main__':
