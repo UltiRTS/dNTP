@@ -33,7 +33,7 @@ class Downloader(threading.Thread):
         print("Initialized.")
     
     def vagueFilter(self):
-        self.mapInfo.sort(lambda x: x.get('mapName'))
+        self.mapInfo.sort(key=lambda x: x.get('mapName'))
 
         mapInfoIndex = 0
         infoCount = len(self.mapInfo)
@@ -73,6 +73,9 @@ class Downloader(threading.Thread):
     
 
 if __name__ == '__main__':
+    if os.path.exists('maps'):
+        os.mkdir('maps')
+
     zk = ZeroKScrapper()
     sc = SpringCrapper()
     dl = Downloader(scrappers=[zk, sc])

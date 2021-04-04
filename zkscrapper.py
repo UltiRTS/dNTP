@@ -32,7 +32,10 @@ class ZeroKScrapper:
 		else:
 			self.mode = "INIT"
 			if not os.path.exists(self.defaultInfoPath):
-				os.mkdir(self.defaultInfoPath)
+				try:
+					os.mknod(self.defaultInfoPath)
+				except:
+					pass
 
 		self.detailFilePath = defaultDetailFilePath
 		# with map name and map download url
@@ -78,9 +81,9 @@ class ZeroKScrapper:
 				info = self._extractMapInfoFromDetailUrl(detailLink)
 				if info:
 					self.mapInfo.append(info)
-	#				with open(self.defaultInfoPath, 'a') as f:
-	#					f.write("{0},{1}".format(info['mapName'], info['url']))
-	#					print("Wrote map -> {0}, url -> {1}".format(info['mapName'], info['url']))
+					with open(self.defaultInfoPath, 'a') as f:
+						f.write("{0},{1}".format(info['mapName'], info['url']))
+						print("Wrote map -> {0}, url -> {1}".format(info['mapName'], info['url']))
 		else:
 			with open(self.detailFilePath, "r") as f:
 				mapInfoLines = f.readlines()
