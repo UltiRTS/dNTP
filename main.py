@@ -1,84 +1,136 @@
 import os
 import requests
-import threading
+import random
+from threading import Thread
+from indexbuilder import buildIndex
 from zkscrapper import ZeroKScrapper
 from springCrapper import SpringCrapper
-from difflib import SequenceMatcher
 
+failedDownloads={}
+downloadedmap=0
+maptotal=0
 
-class Downloader(threading.Thread):
-    '''
-    To plugin another downloader for map filter
-    the other downloader/mapListGetter must have these attr
-    mapInfo -> [
-        {
-            "mapName": "",
-            "url": ""
-        }
-    ]
-    '''
+def downloader():
+	global downloadedmap
+	global failedDownloads
+	global zk
+	while zk.mapInfo:
+		key=random.choice(list(zk.mapInfo.keys()))
+		
+		tmpUrls=zk.mapInfo[key].copy()
+		del zk.mapInfo[key]    #do not let others access it once I start to work on it
+		
+		
+		i=-1
+		
+		
+		if doIhaveDis(key):
+			downloadedmap+=1
+			continue   #move on to the next if there is already one copy on disk
+		
+		while i<len(tmpUrls)-1:
+			try:
+				i+=1
+				if tmpUrls[i]=='':
+					continue
+					
+				resp = requests.get(tmpUrls[i],timeout=10)
+				if resp.status_code != 200:
+					if i==len(tmpUrls)-1:
+						print('[dNTP] Error downloading map'+key+' from :'+str(tmpUrls)+' Http Code: '+resp.status_code+' Server Msg:'+ resp.content+' Retry: '+str(i)+'out of'+ str(len(tmpUrls)))
+						failedDownloads[key]=tmpUrls.copy()
+					
+					continue   #try the next url in the list
 
-    def __init__(self, scrappers = [], retry=3, ratio=0.7):
-        threading.Thread.__init__(Downloader)
+				with open(os.path.join('maps', key), 'wb') as f:
+					f.write(resp.content)
+					downloadedmap+=1
+					print("[dNTP] Downloaded map "+key+' '+str(downloadedmap)+'/ '+str(maptotal))
+					break
+			
+			except Exception as e:
+				failedDownloads[key]=tmpUrls.copy()
+				print('[dNTP] Error downloading map:'+ key+' urls:'+ str(tmpUrls)+'local Exception:'+ str(e)+' Retry: '+str(i)+'out of'+ str(len(tmpUrls)))
 
-        self.compareRatio = ratio
-        self.defaultRetry = retry
+			
+				
 
-        self.mapInfo = []
+def doIhaveDis(targetFile):
+	for filename in os.listdir('maps/'):
+		if targetFile == filename:
+			return True
 
-        for scrapper in scrappers:
-            scrapper._getAllMapInfo()
-            self.mapInfo.extend(scrapper.mapInfo)
-        
-        print("Initialized.")
-    
-    def vagueFilter(self):
-        self.mapInfo.sort(key=lambda x: x.get('mapName'))
-
-        mapInfoIndex = 0
-        infoCount = len(self.mapInfo)
-
-        while mapInfoIndex+1 < infoCount:
-            cur = self.mapInfo[mapInfoIndex]['mapName']
-            next = self.mapInfo[mapInfoIndex+1]['mapName']
-
-            if SequenceMatcher(None, cur, next).ratio() > self.compareRatio:
-                self.mapInfo.pop(mapInfoIndex)
-                infoCount -= 1 
-            else:
-                mapInfoIndex += 1
-    
-    def run(self):
-        self.vagueFilter()
-        index = 0
-        retry = 3
-        while index < len(self.mapInfo):
-            mapInfo = self.mapInfo[index]
-            try:
-                resp = requests.get(mapInfo['url'])
-                if resp.status_code != 200:
-                    continue
-
-                with open(os.path.join('maps', mapInfo['mapName']), 'wb') as f:
-                    f.write(resp.content)
-                    print("Downloaded {0}".format(mapInfo['mapName']))
-                index += 1
-            except Exception as e:
-                if retry < 0:
-                    retry = 3
-                    index += 1
-                print("error -> {0}, retrying {1} times.".format(e, retry))
-                retry -= 1
-
-    
 
 if __name__ == '__main__':
-    if os.path.exists('maps'):
-        os.mkdir('maps')
+	
+	if not os.path.exists('maps'):
+		os.mkdir('maps')
+    
+	zk = ZeroKScrapper()
+	sc = SpringCrapper()
+	zk.start()
+	print('[dNTP] zk sc started')
+	sc.start()
+	print('[dNTP] sf sc started')
+	print('[dNTP] still waiting for worker process to exit')
+	zk.join()
+	sc.join()
+	for key in sc.mapInfo:
+		try:
+			zk.mapInfo[key][0]=sc.mapInfo[key][0]
+		except:
+			zk.mapInfo[key]=['']
+			zk.mapInfo[key][0]=sc.mapInfo[key][0]
+			
+	print('[dNTP] downloading')
+	
+	maptotal=len(zk.mapInfo)
+	#downloader(zk.mapInfo)
+	
+	threads = []
+	
+	t = Thread(target=downloader, args=())
+	t.start()
+	threads.append(t)
 
-    zk = ZeroKScrapper()
-    sc = SpringCrapper()
-    dl = Downloader(scrappers=[zk, sc])
+	t = Thread(target=downloader, args=())
+	t.start()
+	threads.append(t)
 
-    print("start downloading.")
-    dl.start()
+	t = Thread(target=downloader, args=())
+	t.start()
+	threads.append(t)
+
+	t = Thread(target=downloader, args=())
+	t.start()
+	threads.append(t)
+	
+	t = Thread(target=downloader, args=())
+	t.start()
+	threads.append(t)
+
+	t = Thread(target=downloader, args=())
+	t.start()
+	threads.append(t)
+
+	for j in threads:
+		j.join()
+	print("[dNTP] Failed downloads: "+str(failedDownloads))	
+
+	buildIndex()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

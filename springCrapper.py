@@ -6,27 +6,26 @@ from difflib import SequenceMatcher
 
 
 
-class SpringCrapper:
+class SpringCrapper(threading.Thread):
 
-    def __init__(self):
-        self.mapInfo = []
-        self.targetUrl = "https://api.springfiles.com/files/maps/"
+	def __init__(self):
+		threading.Thread.__init__(SpringCrapper)
+		self.mapInfo = {}
+		self.targetUrl = "https://api.springfiles.com/files/maps/"
 
-    def _getAllMapInfo(self):
-        resp = requests.get(self.targetUrl)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        allATags = soup.select('a')
-        for tag in allATags:
-            tagHref = tag['href']
-            if tagHref.endswith('sd7') or tagHref.endswith('sdz'):
-                self.mapInfo.append({
-                    "mapName": tagHref,
-                    "url": self.targetUrl + tagHref
-                })
-        
-        return len(self.mapInfo)
+	def run(self):
+		resp = requests.get(self.targetUrl)
+		soup = BeautifulSoup(resp.text, 'html.parser')
+		allATags = soup.select('a')
+		for tag in allATags:
+			tagHref = tag['href']
+			if tagHref.endswith('sd7') or tagHref.endswith('sdz'):
+				self.mapInfo[tagHref]=['']
+				self.mapInfo[tagHref][0]=self.targetUrl + tagHref
+		print('[dNTP] sf sc finished')
+		return 
 
 if __name__ == '__main__':
     sc = SpringCrapper()
-    sc._getAllMapInfo()
+    sc.start()
     print(sc.mapInfo)

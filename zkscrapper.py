@@ -1,11 +1,13 @@
 import os
 import requests
+import threading
 from bs4 import BeautifulSoup
 
 # offset start at 40 end at 200
-class ZeroKScrapper:
+class ZeroKScrapper(threading.Thread):
 
 	def __init__(self, defaultDetailFilePath=None):
+		threading.Thread.__init__(ZeroKScrapper)
 		self.targetUrl = "http://zero-k.info/Maps"
 		self.base = "http://zero-k.info"
 		self.defaultInfoPath = 'mapInfo.csv'
@@ -27,73 +29,58 @@ class ZeroKScrapper:
             "search": "",
             "offset": 40
         }
-		if defaultDetailFilePath:
-			self.mode = "UPDATE"
-		else:
-			self.mode = "INIT"
-			if not os.path.exists(self.defaultInfoPath):
-				try:
-					os.mknod(self.defaultInfoPath)
-				except:
-					pass
 
 		self.detailFilePath = defaultDetailFilePath
 		# with map name and map download url
-		self.mapInfo = []
+		self.mapInfo = {}
 
 	def _extractMapInfoFromDetailUrl(self, detailLink):
+		found={}
+		
 		resp = self.session.get(self.base + detailLink)
 		soup = BeautifulSoup(resp.text, "html.parser")
 		tags = soup.select('a')
 		for tag in tags:
 			if tag.get('href') and tag['href'].endswith('sd7'):
-				found = {
-					"mapName": os.path.basename(tag['href']),
-					"url": tag['href']
-				}
-				return found
-
-		return None
-
-	def _getAllMapInfo(self):
-		if self.mode == "INIT":
-			# first operation is get,
-			# then all the operation is post 
-			resp = self.session.get(self.targetUrl)
-			soup = BeautifulSoup(resp.text, "html.parser")
-			detailLinks = []
-			tags = soup.select('a')
-			for tag in tags:
-				if tag.get('href') and tag['href'].startswith("/Map"):
-					detailLinks.append(tag['href'])
-
-			for offset in range(40, 201, 40):
-				self.formData['offset'] = offset
-				resp = self.session.post(
-					self.targetUrl, 
-					json=self.formData
-				)
-				soup = BeautifulSoup(resp.text, "html.parser")
-				links = [tag['href'] for tag in soup.select('a')]
-				detailLinks.extend(links)
-
-			for detailLink in detailLinks:
-				info = self._extractMapInfoFromDetailUrl(detailLink)
-				if info:
-					self.mapInfo.append(info)
-					with open(self.defaultInfoPath, 'a') as f:
-						f.write("{0},{1}".format(info['mapName'], info['url']))
-						print("Wrote map -> {0}, url -> {1}".format(info['mapName'], info['url']))
-		else:
-			with open(self.detailFilePath, "r") as f:
-				mapInfoLines = f.readlines()
-				for line in mapInfoLines:
-					mapName, url = line.split(',')
-					self.mapInfo.append({
-						"mapName": mapName,
-						"url": url
-					})
+				found[os.path.basename(tag['href'])]=['']
 				
+				found[os.path.basename(tag['href'])].append(tag['href'])
+				
+		return found
+
+		
+
+	def Merge(self,dict1, dict2):
+    		return(dict2.update(dict1))
+
+	def run(self):
+		resp = self.session.get(self.targetUrl)
+		soup = BeautifulSoup(resp.text, "html.parser")
+		detailLinks = []
+		tags = soup.select('a')
+		for tag in tags:
+			if tag.get('href') and tag['href'].startswith("/Map"):
+				detailLinks.append(tag['href'])
+				
+
+		for offset in range(40, 1001, 40):
+			self.formData['offset'] = offset
+			resp = self.session.post(
+				self.targetUrl, 
+				json=self.formData
+			)
+			soup = BeautifulSoup(resp.text, "html.parser")
+			links = [tag['href'] for tag in soup.select('a')]
+			detailLinks.extend(links)
+			
+
+		for detailLink in detailLinks:
+			info = self._extractMapInfoFromDetailUrl(detailLink)
+			if info:
+				self.Merge(info,self.mapInfo)
+		print('[dNTP] zk sc finished')
+		return
+
 				
 
 
