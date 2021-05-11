@@ -98,32 +98,8 @@ class UnitSync:
 		
 
 if __name__ == '__main__':
-	pass
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+	us = UnitSync('.', 'engine/libunitsync.so')
+	res = us.mapNameVSMapFileName()
+	print(res)
 	

@@ -59,12 +59,16 @@ def doIhaveDis(targetFile):
 	for filename in os.listdir('maps/'):
 		if targetFile == filename:
 			return True
+	#for filename in os.listdir('maps/redacted'):
+		#if targetFile == filename:
+			#return True
 
 
 if __name__ == '__main__':
-	
+	#os.system('rm -rf maps/')
 	if not os.path.exists('maps'):
 		os.mkdir('maps')
+		os.mkdir('maps/redacted')
     
 	zk = ZeroKScrapper()
 	sc = SpringCrapper()
