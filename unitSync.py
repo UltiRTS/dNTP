@@ -1,7 +1,11 @@
+import numpy as np
+from PIL import Image
+from bitstring import BitArray, ConstBitStream
 import ctypes
 from multiprocessing.pool import ThreadPool
 import os
 from difflib import SequenceMatcher
+from numpy.lib.type_check import _imag_dispatcher
 
 from termcolor import colored
 
@@ -19,87 +23,73 @@ class UnitSync:
 		self._getMapName = self.so.GetMapName
 		self._getMapFileName = self.so.GetMapFileName
 		self._getMapArchiveName = self.so.GetMapArchiveName
+		self._getMinimap = self.so.GetMinimap
 		# output settings
 		self._getMapCount.restype = ctypes.c_int
 		self._getMapName.restype = ctypes.c_char_p
 		self._getMapFileName.restype = ctypes.c_char_p
 		self._getMapArchiveName.restype = ctypes.c_char_p
-		
+
+		self.mapNames = []
+
 	
 	def _similiar(self, a, b):
 		return SequenceMatcher(None, a, b).ratio()
-	
-	def _getMaxValueCorrespondsKey(self, aDict):
-		print(colored('[INFO]', 'cyan'), "Ratios: ", aDict)
-		print(colored('[INFO]', 'cyan'), "Sorted Map: ", sorted(aDict, key=lambda x:aDict[x], reverse=True))
-		return sorted(aDict, key=lambda x:aDict[x], reverse=True)[0]
-		
-	def startHeshThread(self, map_path, mod_hesh):
-		self.pool = ThreadPool(processes=1)
-		self.async_result = self.pool.apply_async(
-		self.getHesh, (map_path, mod_hesh))
-		os.chdir(self.startdir)
 
-	def getResult(self):
-		os.chdir(self.startdir)
-		
-		return self.async_result.get()
-
-	def getHesh(self, map_path, mod_hesh):
-		unit_sync = {
-			'mapHesh': self.so.GetMapChecksumFromName(map_path.encode()),
-			'modHesh': self.so.GetPrimaryModChecksumFromName(mod_hesh.encode()),
-		}
-		os.chdir(self.startdir)
-		return unit_sync
-	
-	def syn2map(self,requestedMapName):
-		mapCount = self._getMapCount()
-		requestedMapName=requestedMapName.replace('🦔', ' ')
-		mapDictWithWeight = {}
-		mapIndexDict = {}
-		for i in range(mapCount):
-			mapName = self._getMapName(i).decode('utf-8')
-			mapDictWithWeight[mapName] = self._similiar(mapName, requestedMapName)
-			mapIndexDict[mapName] = i
-#			if requestedMapName in mapName:
-#				fname = self._getMapFileName(i).decode('utf-8')
-#				break
-#		else:
-#			fname = mapName = None
-#			print(colored('[ERRO]', 'red'), colored(self.username+'/unitSync: map '+requestedMapName+' not found', 'white'))
-#			return {'mapName': None, 'fileName': None}
-
-		#print( mapName, fname )
-		
-		#mapName = mapName[5:-4]
-		#fname = fname.replace(' ', '🦔') + ".sd7"  #I doubt map file name is used
-		mapName = self._getMaxValueCorrespondsKey(mapDictWithWeight)
-		fname = self._getMapFileName(mapIndexDict[mapName]).decode('utf-8')
-		mapName = mapName.replace(' ', '🦔')
-		print( colored('[INFO]', 'green'), colored(self.username+'/unitSync: Returning actual mapfile: '+fname+' with map name '+mapName, 'white'))
-		return {'mapName': mapName, 'fileName': fname}
-	
 	def mapList(self):
-		mapList=''
+		mapList = []
 		mapCount = self._getMapCount()
 		for i in range(mapCount):
-			mapList+=self._getMapName(i).decode('utf-8').replace(' ', '🦔')+' '
+			mapList.append(self._getMapName(i).decode('utf8'))
 		os.chdir(self.startdir)
+
+		self.mapNames = mapList
+
 		return mapList
+
+	def _getImg(self, mapname, reduction=0):
+		width = height = 1024 // 2**reduction
+		self._getMinimap.restype = ctypes.POINTER(ctypes.c_ubyte * (width * height * 2))
+		minimapData = self._getMinimap(mapname.encode('utf8'), reduction).contents
+#		have, need = len(minimapData), width*height*2
+#		print(have, need)
+#		if have < need:
+#			print("No much data fixing.")
+#			emptyFix = bytes(need-have)
+#			minimapData += emptyFix
+
+		mapname.replace(' ', '_')
+		img = Image.frombytes('RGB', (width, height), minimapData, 'raw', 'BGR;16' )
+
+		return img
+
+	def storeMinimap(self, mapname, storage="finalMap"):
+		minimapStorePath = os.path.join(storage, mapname.replace(' ', '🦔') + '.png')
+		for reduction in range(0,9):
+			try:
+				img = self._getImg(mapname, reduction)
+				break
+			except:
+				#print(colored("ERROR", 'red'), "No much data reduce width and height.")
+				pass
+		img.save(minimapStorePath)
+
+
+		return minimapStorePath
 		
-	def mapNameVSMapFileName(self):
-		filevsname={}
-		mapCount = self._getMapCount()
-		for i in range(mapCount):
-			filevsname[self._getMapFileName(i).decode('utf-8').replace(' ', '🦔')]=self._getMapName(i).decode('utf-8').replace(' ', '🦔')
-		#print(filevsname)
-		return filevsname
+
 		
+	def getMapName(self):
+		self._getMapCount()
+		return self._getMapName(0).decode('utf8')
+
+
 
 if __name__ == '__main__':
+	cur = os.getcwd()
 	
-	us = UnitSync('.', 'engine/libunitsync.so')
-	res = us.mapNameVSMapFileName()
-	print(res)
-	
+	us = UnitSync(cur,cur + '/engine/libunitsync.so')
+	print(us._getMapCount())
+	us.mapList()
+	print(us.mapNames[2])
+	us.storeMinimap(us.mapNames[2])

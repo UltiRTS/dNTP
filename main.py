@@ -42,7 +42,7 @@ def downloader():
 					
 					continue   #try the next url in the list
 
-				with open(os.path.join('maps', key), 'wb') as f:
+				with open(os.path.join('tmpMap', key), 'wb') as f:
 					f.write(resp.content)
 					downloadedmap+=1
 					print("[dNTP] Downloaded map "+key+' '+str(downloadedmap)+'/ '+str(maptotal))
@@ -56,7 +56,10 @@ def downloader():
 				
 
 def doIhaveDis(targetFile):
-	for filename in os.listdir('maps/'):
+	for filename in os.listdir('finalMap/'):
+		if targetFile == filename:
+			return True
+	for filename in os.listdir('tmpMap/'):
 		if targetFile == filename:
 			return True
 	#for filename in os.listdir('maps/redacted'):
@@ -66,9 +69,10 @@ def doIhaveDis(targetFile):
 
 if __name__ == '__main__':
 	#os.system('rm -rf maps/')
-	if not os.path.exists('maps'):
-		os.mkdir('maps')
-		os.mkdir('maps/redacted')
+	#if not os.path.exists('maps'):
+		#os.mkdir('maps')
+	#if not os.path.exists('redacted'):
+		#os.mkdir('redacted')
     
 	zk = ZeroKScrapper()
 	sc = SpringCrapper()
