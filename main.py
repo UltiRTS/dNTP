@@ -2,6 +2,9 @@ import os
 import requests
 import random
 from threading import Thread
+
+from six import with_metaclass
+from termcolor import colored
 from indexbuilder import buildIndex
 from zkscrapper import ZeroKScrapper
 from springCrapper import SpringCrapper
@@ -133,5 +136,15 @@ if __name__ == '__main__':
 	arr = os.listdir('finalMap/')
 	for filename in arr:
 		if not filename.endswith('png'):
-			DFS.add2fs('finalMap/' + filename, filename.split('.')[0])
+			DFS.add2fs('finalMap/' + filename, filename.split('.')[0])	
+
+	ipfsInfo = DFS.retriveMapsMap()
+
+	with open('finalMap/ipfs.info', 'w') as f:
+		for info in ipfsInfo.items():
+			f.write(info[0] + ',' + info[1] + '\n')
+
+
+		print(colored('[INFO]', 'green'), 'ipfs info wrote at', 'finalMap/ipfs.info')
+
 
