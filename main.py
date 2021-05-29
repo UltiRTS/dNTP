@@ -5,6 +5,7 @@ from threading import Thread
 from indexbuilder import buildIndex
 from zkscrapper import ZeroKScrapper
 from springCrapper import SpringCrapper
+from dntpFilesystem import DntpFileSystem
 
 failedDownloads={}
 downloadedmap=0
@@ -128,17 +129,9 @@ if __name__ == '__main__':
 	buildIndex()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+	DFS = DntpFileSystem()
+	arr = os.listdir('finalMap/')
+	for filename in arr:
+		if not filename.endswith('png'):
+			DFS.add2fs('finalMap/' + filename, filename.split('.')[0])
 
