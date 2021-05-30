@@ -4,7 +4,9 @@ import libarchive
 
 
 from unitSync import UnitSync
+import DntpFileSystem from dntpFilesystem
 
+DFS = DntpFileSystem()
 
 def buildIndex():
 	startDir = os.getcwd()
@@ -22,9 +24,15 @@ def buildIndex():
 		
 		try:
 			mapName=usync.getMapName()
-			usync.storeMinimap(mapName)
+			minimapPath = usync.storeMinimap(mapName)
+			minimapFilename = minimapPath.split('/')[-1]
+
+			DFS.add2fs(minimapPath, minimapFilename)
+
+			
 			os.system('echo "'+mapName.replace(' ', '🦔')+' '+i.replace(' ', '🦔')+'" >> finalMap/index.txt')
 			os.system('mv -f engine/maps/* finalMap/')
+
 			print('[dNTP] Generated minimaps for'+str(i)+' ('+str(totalMaps)+')')
 		
 		except Exception as e:
