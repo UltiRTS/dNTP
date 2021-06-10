@@ -1,7 +1,6 @@
 import os
 import ipfshttpclient
 from ipfshttpclient.multipart import FilesStream
-from six import create_bound_method
 from termcolor import colored
 
 
@@ -10,23 +9,39 @@ class DntpFileSystem:
     def __init__(self, addr:str='/dns/localhost/tcp/5001/http', mapDir:str='/maps') -> None:
         self._client = ipfshttpclient.Client(addr)
         self._mapDir = mapDir
-        try:
-            self._client.files.mkdir(mapDir)
+        try: 
+            # try to access dir stat
+            self._client.files.ls(mapDir)
         except ipfshttpclient.exceptions.ErrorResponse as e:
-            print(colored('[WARN]', 'yellow'), ' ', e)
+            # if dir not exists then mkdir
+            self._client.files.mkdir(mapDir)
 
-        print(colored('[INFO]', 'green'), ' ifps client initialized.')
+        print(colored('[INFO]', 'green'), 'ifps client initialized.')
+
+    def mkdirs(self, dirs:list):
+        for directory in dirs:
+            try:
+                # prefix
+                if not directory.startswith('/'): directory = '/' + directory
+                self._client.files.mkdir(directory)
+            except ipfshttpclient.exceptions.ErrorResponse as e:
+                print(colored('[WARN]', 'yellow'), e, 'when make directory')
+
 
     def add2fs(self, realFileLoc:str, filename:str, storeDir=None):
         if not storeDir: storeDir = self._mapDir
 
         storeLoc = os.path.join(storeDir, filename)
 
+        print(colored('[INFO]', 'cyan'), 'adding ', storeLoc, ' to ipfs.')
+
         try:
             self._client.files.write(path=storeLoc, file=realFileLoc, create=True)
-            print(colored('[INFO]', 'green'), ' ipfs file loc: {0} add successful.'.format(storeLoc)) 
+            print(colored('[INFO]', 'green'), 'ipfs file loc: {0} add successful.'.format(storeLoc)) 
         except ipfshttpclient.exceptions.ErrorResponse as e:
-            print(colored('[WARN]', 'yellow'), ' ', e)
+            print(colored('[WARN]', 'yellow'), e)
+
+        return self._client.files.stat(storeLoc)['Hash']
         
 
     def retriveMapsMap(self, storeDir=None):
