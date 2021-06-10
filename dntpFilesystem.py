@@ -43,7 +43,20 @@ class DntpFileSystem:
         
         return resMap
 
-    
+    def putIntoIPFS(self):
+		
+		arr = os.listdir('finalMap/')
+		for filename in arr:
+			if not filename.endswith('png'):
+				self.add2fs('finalMap/' + filename, filename.split('.')[0])	
+
+		ipfsInfo = self.retriveMapsMap()
+
+		with open('finalMap/ipfs.txt', 'w') as f:
+			for info in ipfsInfo.items():
+				f.write(info[0] + ',' + info[1] + '\n')
+		print(colored('[INFO]', 'green'), 'ipfs info wrote at', 'finalMap/ipfs.txt')
+		
 if __name__ == '__main__':
     DFS = DntpFileSystem()
     # testfile must exists
