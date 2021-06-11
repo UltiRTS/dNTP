@@ -111,6 +111,8 @@ def getFilelist(start_loc, ignore_pat=re.compile('(^\.)|(^__)')):
     return res
 
     
+def updateMaps(start_loc):
+    pass
 
 def hashFile(file_path):
     """hashFile.

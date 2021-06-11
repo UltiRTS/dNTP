@@ -32,6 +32,8 @@ class UnitSync:
 
 		self.mapNames = []
 
+    def reinit(self):
+        self.init = self.so.Init(0, 0)
 	
 	def _similiar(self, a, b):
 		return SequenceMatcher(None, a, b).ratio()
@@ -77,7 +79,6 @@ class UnitSync:
 
 		return minimapStorePath
 		
-
 		
 	def getMapName(self):
 		self._getMapCount()
