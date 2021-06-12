@@ -1,6 +1,7 @@
 import os
 import re
 import queue
+import shutil
 import sqlite3
 import hashlib
 from termcolor import colored
@@ -117,7 +118,9 @@ def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
     DFS = DntpFileSystem(mapDir='/maps')
 
     libPath = os.path.join(engineLoc, 'libunitsync.so')
+    startDir = os.getcwd()
     uSync = UnitSync(os.getcwd(), libPath)
+
 
     tempMaps = os.listdir(tmp)
     engineMapDirLoc = os.path.join(engineLoc, 'maps')
@@ -130,13 +133,14 @@ def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
 
         # reinit unitsync everytime
         uSync.reinit()
+        os.chdir(startDir)
 
         tmpMapLoc = os.path.join(tmp, tempMap)
         engineMapLoc = os.path.join(engineMapDirLoc, tempMap)
         targetMapLoc = os.path.join(target, tempMap)
 
         # move current map file to `engine/maps`
-        os.rename(tmpMapLoc, engineMapLoc)
+        shutil.move(tmpMapLoc, engineLoc)
 
         mapName = uSync.getMapName()
         minimapPath = uSync.storeMinimap(mapName)
@@ -151,7 +155,7 @@ def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
                     (mapName, tempMap, minimapFilename, mapHash, minimapIpfsAddr, mapIpfsAddr))
         
         # after finishing, move file to `finalMap/`
-        os.rename(engineMapLoc, targetMapLoc)
+        shutil.move(engineMapLoc, targetMapLoc)
 
     conn.commit()
     print(colored('[INFO]', 'green'), 'map updated')
