@@ -2,7 +2,6 @@ from PIL import Image
 import ctypes
 import os
 from difflib import SequenceMatcher
-
 from termcolor import colored
 
 

@@ -113,6 +113,21 @@ def getFilelist(start_loc, ignore_pat=re.compile('(^\.)|(^__)')):
 
     
 def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
+    err = None
+    if not os.path.exists(tmp):
+        print(colored('[ERRO]', 'red'), tmp, "not exists.")
+        err = 'dir not exists'
+    if not os.path.exists(tmp):
+        print(colored('[ERRO]', 'red'), target, "not exists.")
+        err = 'dir not exists'
+    if not os.path.exists(tmp):
+        print(colored('[ERRO]', 'red'), engineLoc, "not exists.")
+        err = 'dir not exists'
+
+    if err:
+        return 
+
+    startDir = os.getcwd()
 
     DFS = DntpFileSystem(mapDir='/maps')
 
@@ -130,6 +145,7 @@ def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
 
         # reinit unitsync everytime
         uSync.reinit()
+        os.chdir(startDir)
 
         tmpMapLoc = os.path.join(tmp, tempMap)
         engineMapLoc = os.path.join(engineMapDirLoc, tempMap)
@@ -169,5 +185,4 @@ def hashFile(file_path):
 
 if __name__ == '__main__':
     initDB()
-
     updateMaps()
