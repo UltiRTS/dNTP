@@ -140,7 +140,7 @@ def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
         targetMapLoc = os.path.join(target, tempMap)
 
         # move current map file to `engine/maps`
-        shutil.move(tmpMapLoc, engineLoc)
+        shutil.move(tmpMapLoc, engineMapLoc)
 
         mapName = uSync.getMapName()
         minimapPath = uSync.storeMinimap(mapName)
