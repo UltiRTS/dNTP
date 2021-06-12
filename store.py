@@ -149,11 +149,12 @@ def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
                     (map_name, map_filename, minimap_filename, map_hash, minimap_ipfs_addr, map_ipfs_addr) \
                     values (?, ?, ?, ?, ?, ?)',
                     (mapName, tempMap, minimapFilename, mapHash, minimapIpfsAddr, mapIpfsAddr))
-
         
         # after finishing, move file to `finalMap/`
         os.rename(engineMapLoc, targetMapLoc)
 
+    conn.commit()
+    print(colored('[INFO]', 'green'), 'map updated')
 
 def hashFile(file_path):
     """hashFile.
@@ -166,6 +167,34 @@ def hashFile(file_path):
 
     return hashlib.md5(toHash).hexdigest()
 
+def updateArchive(archiveDir='/opt/archive'):
+
+    DFS = DntpFileSystem(mapDir='/archives')
+
+    conn = sqlite3.connect(DB_CONF['DB_name'])
+    cur = conn.cursor()
+
+    archives = os.listdir(archiveDir)
+
+    for archive in archives:
+        if not os.path.isfile(archive):
+            continue
+            
+        archiveLoc = os.path.join(archiveDir, archive)
+        archiveHash = hashFile(archiveLoc)
+        ipfs_addr = DFS.add2fs(archiveLoc, archive)
+
+        cur.execute('INSERT INTO archives \
+            (zip_name, extract_to, zip_hash, ipfs_addr) \
+            values \
+            (?, ?, ?, ?)', 
+            archive, archive, archiveHash, ipfs_addr)
+        
+    conn.commit()
+    print(colored('[INFO]', 'green'), 'updated archives')
+
+            
+            
 
 if __name__ == '__main__':
     initDB()
