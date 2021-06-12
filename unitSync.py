@@ -1,11 +1,7 @@
-import numpy as np
 from PIL import Image
-from bitstring import BitArray, ConstBitStream
 import ctypes
-from multiprocessing.pool import ThreadPool
 import os
 from difflib import SequenceMatcher
-from numpy.lib.type_check import _imag_dispatcher
 
 from termcolor import colored
 
@@ -32,8 +28,8 @@ class UnitSync:
 
 		self.mapNames = []
 
-    def reinit(self):
-        self.init = self.so.Init(0, 0)
+	def reinit(self):
+		self.init = self.so.Init(0, 0)
 	
 	def _similiar(self, a, b):
 		return SequenceMatcher(None, a, b).ratio()

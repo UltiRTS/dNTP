@@ -5,6 +5,7 @@ import sqlite3
 import hashlib
 from termcolor import colored
 from dntpFilesystem import DntpFileSystem
+from unitSync import UnitSync
 
 DB_CONF = {
         'DB_name': 'info.db',
@@ -111,8 +112,48 @@ def getFilelist(start_loc, ignore_pat=re.compile('(^\.)|(^__)')):
     return res
 
     
-def updateMaps(start_loc):
-    pass
+def updateMaps(tmp='tmpMap', target='finalMap', engineLoc='engine'):
+
+    DFS = DntpFileSystem(mapDir='/maps')
+
+    libPath = os.path.join(engineLoc, 'libunitsync.so')
+    uSync = UnitSync(os.getcwd(), libPath)
+
+    tempMaps = os.listdir(tmp)
+    engineMapDirLoc = os.path.join(engineLoc, 'maps')
+
+    conn = sqlite3.connect(DB_CONF['DB_name'])
+    cur = conn.cursor()
+
+    # tempMap is file name of map
+    for tempMap in tempMaps:
+
+        # reinit unitsync everytime
+        uSync.reinit()
+
+        tmpMapLoc = os.path.join(tmp, tempMap)
+        engineMapLoc = os.path.join(engineMapDirLoc, tempMap)
+        targetMapLoc = os.path.join(target, tempMap)
+
+        # move current map file to `engine/maps`
+        os.rename(tmpMapLoc, engineMapLoc)
+
+        mapName = uSync.getMapName()
+        minimapPath = uSync.storeMinimap(mapName)
+        minimapFilename = minimapPath.split('/')[-1]
+        minimapIpfsAddr = DFS.add2fs(minimapPath, minimapFilename)
+        mapIpfsAddr = DFS.add2fs(engineMapLoc, tempMap)
+        mapHash = hashFile(engineMapLoc)
+
+        cur.execute('INSERT INTO maps \
+                    (map_name, map_filename, minimap_filename, map_hash, minimap_ipfs_addr, map_ipfs_addr) \
+                    values (?, ?, ?, ?, ?, ?)',
+                    (mapName, tempMap, minimapFilename, mapHash, minimapIpfsAddr, mapIpfsAddr))
+
+        
+        # after finishing, move file to `finalMap/`
+        os.rename(engineMapLoc, targetMapLoc)
+
 
 def hashFile(file_path):
     """hashFile.
@@ -129,4 +170,4 @@ def hashFile(file_path):
 if __name__ == '__main__':
     initDB()
 
-    updateEngine()
+    updateMaps()

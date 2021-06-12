@@ -1,12 +1,12 @@
 import os
-import libarchive
+import shutil
 from unitSync import UnitSync
-import DntpFileSystem from dntpFilesystem
+from dntpFilesystem import DntpFileSystem
 
 DFS = DntpFileSystem()
 
 def buildIndex():
-    mapsInfo = []
+	mapsInfo = []
 
 	startDir = os.getcwd()
 	os.system('echo "" > finalMap/index.txt')
@@ -15,23 +15,21 @@ def buildIndex():
 	failedMaps=0
 	os.system('rm -rf engine/maps/*')
 
-    usync=UnitSync(startDir,startDir+'/engine/libunitsync.so')
+	usync=UnitSync(startDir,startDir+'/engine/libunitsync.so')
 	for i in arr:
 		totalMaps+=1
 		os.system('cp -a "tmpMap/'+i+'" engine/maps/')
 		#init=usync.init()
-        usync.reinit()
+		usync.reinit()
 		
 		try:
 			mapName=usync.getMapName()
-            mapFileName=usync._getMapFileName(0)
-            mapArciveName = usync._getMapArchiveName(mapName)
+			mapFileName=usync._getMapFileName(0)
+			mapArciveName = usync._getMapArchiveName(mapName)
 			minimapPath = usync.storeMinimap(mapName)
 			minimapFilename = minimapPath.split('/')[-1]
 
 			ipfs_addr = DFS.add2fs(minimapPath, minimapFilename)
-
-            print(mapName, mapFileName, mapArciveName, minimapFilename, ipfs_addr)
 
 			
 			os.system('echo "'+mapName.replace(' ', '🦔')+' '+i.replace(' ', '🦔')+'" >> finalMap/index.txt')
@@ -50,7 +48,7 @@ def buildIndex():
 		
 	print('dNTP completed; totalmaps: '+str(totalMaps)+' failed maps: '+ str(failedMaps))
 
-    return mapsInfo
+	return mapsInfo
 	
 	
 	
