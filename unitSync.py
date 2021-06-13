@@ -86,7 +86,4 @@ if __name__ == '__main__':
 	cur = os.getcwd()
 	
 	us = UnitSync(cur,cur + '/engine/libunitsync.so')
-	print(us._getMapCount())
-	us.mapList()
-	print(us.mapNames[2])
-	us.storeMinimap(us.mapNames[2])
+	print(us.mapList())
