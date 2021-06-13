@@ -89,10 +89,10 @@ if __name__ == '__main__':
 	sc.join()
 	for key in sc.mapInfo:
 		try:
-			zk.mapInfo[key][0]=sc.mapInfo[key][0]
+			zk.mapInfo[key][0]=sc.mapInfo[key][0]   #use springscrappers links to replace links in the zk indexer
 		except:
 			zk.mapInfo[key]=['']
-			zk.mapInfo[key][0]=sc.mapInfo[key][0]
+			zk.mapInfo[key][0]=sc.mapInfo[key][0]  #if the entry does not exist, create a new entry and do the above again
 			
 	print('[dNTP] downloading')
 	
@@ -133,18 +133,5 @@ if __name__ == '__main__':
 
 
 	DFS = DntpFileSystem()
-	arr = os.listdir('finalMap/')
-	for filename in arr:
-		if not filename.endswith('png'):
-			DFS.add2fs('finalMap/' + filename, filename.split('.')[0])	
-
-	ipfsInfo = DFS.retriveMapsMap()
-
-	with open('finalMap/ipfs.info', 'w') as f:
-		for info in ipfsInfo.items():
-			f.write(info[0] + ',' + info[1] + '\n')
-
-
-		print(colored('[INFO]', 'green'), 'ipfs info wrote at', 'finalMap/ipfs.info')
-
+	DFS.putIntoIPFS()
 
