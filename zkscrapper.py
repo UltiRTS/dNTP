@@ -13,13 +13,13 @@ class ZeroKScrapper(threading.Thread):
 		self.defaultInfoPath = 'mapInfo.csv'
 		self.session = requests.session()
 		self.formData = {
-            "mapSupportLevel": 2,
+            "mapSupportLevel": 'Any',
             "size": "any",
             "sea": "any",
             "hills": "any",
             "elongated": "any",
             "assymetrical": "any",
-            "special": 0,
+            "special": -1,
             "isTeams": "Any",
             "is1v1": "any",
             "ffa": "any",
@@ -62,23 +62,35 @@ class ZeroKScrapper(threading.Thread):
 			if tag.get('href') and tag['href'].startswith("/Map"):
 				detailLinks.append(tag['href'])
 				
-
-		for offset in range(40, 1001, 40):
+		
+		pageCount = 0
+		offset = 40
+		while True:
 			self.formData['offset'] = offset
 			resp = self.session.post(
 				self.targetUrl, 
 				json=self.formData
 			)
+			
 			soup = BeautifulSoup(resp.text, "html.parser")
 			links = [tag['href'] for tag in soup.select('a')]
+			print(links)
+
+			if links == []:
+				break
+
+			pageCount += 1
 			detailLinks.extend(links)
-			
+
+			offset += 40
 
 		for detailLink in detailLinks:
 			info = self._extractMapInfoFromDetailUrl(detailLink)
 			if info:
 				self.Merge(info,self.mapInfo)
 		print('[dNTP] zk sc finished')
+
+		print(pageCount)
 		return
 
 				
@@ -89,5 +101,5 @@ class ZeroKScrapper(threading.Thread):
 
 if __name__ == '__main__':
 	zk = ZeroKScrapper()
-	zk._getAllMapInfo()
-	print(zk.mapInfo)
+	zk.start()
+	zk.join()
