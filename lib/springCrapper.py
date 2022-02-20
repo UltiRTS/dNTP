@@ -25,6 +25,7 @@ class SpringCrapper(threading.Thread):
 					self.mapInfo[tagHref][0]=self.targetUrl + tagHref
 			print('[dNTP] sf sc finished')
 		except Exception as e:
+			print(e)
 			print('[dNTP] spring sc lost contact with spring ')
 		return 
 
