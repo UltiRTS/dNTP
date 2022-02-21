@@ -30,9 +30,7 @@ class UnitSync:
 	def reinit(self):
 		self.init = self.so.Init(0, 0)
 		
-	
-	def _similiar(self, a, b):
-		return SequenceMatcher(None, a, b).ratio()
+
 
 	def mapList(self):
 		mapList = []
@@ -63,7 +61,7 @@ class UnitSync:
 
 	def storeMinimap(self, mapname):
 		minimapStorePath = os.path.join(self.startdir+'/tmpMap', mapname.replace(' ', '🦔') + '.png')
-		img = self._getImg(mapname, 0)
+		#img = self._getImg(mapname, 0)
 		for reduction in range(0,9):
 			try:
 				img = self._getImg(mapname, reduction)

@@ -7,12 +7,9 @@ import store
 import time
 from threading import Thread
 
-#from six import with_metaclass
 from termcolor import colored
-#from indexbuilder import buildIndex
 from lib.zkscrapper import ZeroKScrapper
 from lib.springCrapper import SpringCrapper
-#from dntpFilesystem import DntpFileSystem
 
 
 
@@ -59,7 +56,7 @@ class mapDownloader():
 					with open(os.path.join('tmpMap', key), 'wb') as f:
 						f.write(resp.content)
 						self.downloadedmap+=1
-						print("[dNTP] Downloaded map "+key+' '+str(self.downloadedmap)+'/ '+str(self.maptotal), end = "\r")
+						print(("[dNTP] Downloaded map "+key+' ').ljust(150)+str(self.downloadedmap)+'/ '+str(self.maptotal), end = "\r")
 						break
 				
 				except Exception as e:
