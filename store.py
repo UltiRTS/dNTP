@@ -88,7 +88,7 @@ class fileStorager():
 					print(colored('[INFO]', 'green'), "Map already exists in db, skipping...")
 					continue
 				else:
-					cur.execute("INSERT INTO maps (map_name, map_filename, minimap_filename, map_hash) VALUES (?, ?, ?)", (mapName, tempMap, minimapFilename, mapHash))
+					cur.execute("INSERT INTO maps (map_name, map_filename, minimap_filename, map_hash) VALUES (?, ?, ?, ?)", (mapName, tempMap, minimapFilename, mapHash))
 					#conn.commit()
 					print(colored('[INFO]', 'green'), "Added map to db: "+mapName)
 					
