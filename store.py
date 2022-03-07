@@ -81,16 +81,18 @@ class fileStorager():
 				minimapFilename = minimapPath.split('/')[-1]
 				
 				mapHash = self._hashFile(self.startDir+'/tmpMap/'+tempMap)
-				try:
-					cur.execute("DELETE FROM maps WHERE map_name='"+mapName.replace(' ', '🦔')+"'")
-					conn.commit()
-				except:
-					print('New map, no old rec '+mapName)
+				
+				# check if map already exists in db, if yes, do nothing, if no, insert record
+				cur.execute("SELECT * FROM maps WHERE map_hash = ?", (mapHash,))
+				if cur.fetchone():
+					print(colored('[INFO]', 'green'), "Map already exists in db, skipping...")
+					continue
+				else:
+					cur.execute("INSERT INTO maps (map_name, map_filename, minimap_filename, map_hash) VALUES (?, ?, ?)", (mapName, tempMap, minimapFilename, mapHash))
+					#conn.commit()
+					print(colored('[INFO]', 'green'), "Added map to db: "+mapName)
 					
-				cur.execute('INSERT INTO maps \
-							(map_name, map_filename, minimap_filename, map_hash) \
-							values (?, ?, ?, ?)',
-							(mapName.replace(' ', '🦔'), tempMap, minimapFilename, mapHash))
+
 				os.system('rm '+self.startDir+'/engine/maps/*')
 				# after finishing, move file to `finalMap/`
 
