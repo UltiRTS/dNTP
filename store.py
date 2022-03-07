@@ -81,7 +81,7 @@ class fileStorager():
 				minimapFilename = minimapPath.split('/')[-1]
 				
 				mapHash = self._hashFile(self.startDir+'/tmpMap/'+tempMap)
-				
+				os.system('rm '+self.startDir+'/engine/maps/*')
 				# check if map already exists in db, if yes, do nothing, if no, insert record
 				cur.execute("SELECT * FROM maps WHERE map_hash = ?", (mapHash,))
 				if cur.fetchone():
@@ -93,8 +93,8 @@ class fileStorager():
 					print(colored('[INFO]', 'green'), "Added map to db: "+mapName)
 					
 
-				os.system('rm '+self.startDir+'/engine/maps/*')
-				# after finishing, move file to `finalMap/`
+				
+                                # after finishing, move file to `finalMap/`
 
 				conn.commit()
 
