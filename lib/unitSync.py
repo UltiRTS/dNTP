@@ -60,7 +60,7 @@ class UnitSync:
 		return img
 
 	def storeMinimap(self, mapname):
-		minimapStorePath = os.path.join(self.startdir+'/tmpMap', mapname.replace(' ', '🦔') + '.png')
+		minimapStorePath = os.path.join(self.startdir+'/tmpMap', mapname + '.png')
 		#img = self._getImg(mapname, 0)
 		for reduction in range(0,9):
 			try:
